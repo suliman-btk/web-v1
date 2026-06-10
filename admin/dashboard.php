@@ -4,6 +4,8 @@
  * Module: Admin & Database (Abdelaziz).
  */
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_admin();
 
 $stats = [
     'orders'    => (int) db_one('SELECT COUNT(*) c FROM orders')['c'],

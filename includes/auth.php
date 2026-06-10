@@ -73,8 +73,12 @@ function require_admin(): void
 {
     require_login();
     if (!is_admin()) {
-        http_response_code(403);
-        set_flash('error', 'You do not have permission to access that page.');
-        redirect('index.php');
+        logout_user();
+        // Start a fresh session so the flash message survives the redirect.
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        set_flash('error', 'Admin access only. Please log in with an admin account.');
+        redirect('login.php');
     }
 }
