@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="16" fill="#ECFEFF"/>
+  <!-- roof -->
+  <polygon points="32,8 6,32 58,32" fill="#0891B2"/>
+  <polygon points="32,8 32,32 58,32" fill="#06B6D4"/>
+  <!-- chimney -->
+  <rect x="40" y="16" width="6" height="14" rx="2" fill="#0E7490"/>
+  <!-- house body -->
+  <rect x="12" y="30" width="40" height="28" rx="3" fill="#0E7490"/>
+  <rect x="32" y="30" width="20" height="28" rx="0 3 3 0" fill="#0891B2"/>
+  <!-- door -->
+  <rect x="25" y="42" width="14" height="16" rx="3" fill="#083344"/>
+  <circle cx="36" cy="50" r="1.5" fill="#06B6D4"/>
+  <!-- left window -->
+  <rect x="15" y="34" width="11" height="9" rx="2" fill="#CFFAFE"/>
+  <line x1="20.5" y1="34" x2="20.5" y2="43" stroke="#0891B2" stroke-width="1"/>
+  <line x1="15"   y1="38.5" x2="26" y2="38.5" stroke="#0891B2" stroke-width="1"/>
+  <!-- right window -->
+  <rect x="38" y="34" width="11" height="9" rx="2" fill="#CFFAFE"/>
+  <line x1="43.5" y1="34" x2="43.5" y2="43" stroke="#0891B2" stroke-width="1"/>
+  <line x1="38"   y1="38.5" x2="49" y2="38.5" stroke="#0891B2" stroke-width="1"/>
+  <!-- wifi -->
+  <path d="M 28 22 Q 32 19 36 22" stroke="#E0F2FE" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 25 19 Q 32 14 39 19" stroke="#BAE6FD" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="32" cy="26" r="2" fill="#E0F2FE"/>
+</svg>

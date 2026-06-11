@@ -19,6 +19,14 @@ $featured = db_all(
      ORDER BY p.created_at DESC LIMIT 8'
 );
 
+$catIcons = [
+    'smartphones' => 'assets/images/icons/smartphones.svg',
+    'laptops'     => 'assets/images/icons/laptops.svg',
+    'audio'       => 'assets/images/icons/audio.svg',
+    'smart-home'  => 'assets/images/icons/smart-home.svg',
+    'accessories' => 'assets/images/icons/accessories.svg',
+];
+
 $page_title = 'Home';
 require __DIR__ . '/includes/header.php';
 ?>
@@ -50,7 +58,13 @@ require __DIR__ . '/includes/header.php';
     <div class="category-grid">
         <?php foreach ($categories as $cat): ?>
             <a class="category-card" href="<?= e(url('products.php?cat=' . urlencode($cat['slug']))) ?>">
-                <div class="ic"><?= e($cat['icon']) ?></div>
+                <div class="ic">
+                    <?php if (isset($catIcons[$cat['slug']])): ?>
+                        <img src="<?= e(url($catIcons[$cat['slug']])) ?>" alt="<?= e($cat['name']) ?>">
+                    <?php else: ?>
+                        <?= e($cat['icon']) ?>
+                    <?php endif; ?>
+                </div>
                 <h3><?= e($cat['name']) ?></h3>
                 <small><?= (int) $cat['product_count'] ?> items</small>
             </a>
