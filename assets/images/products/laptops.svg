@@ -1,9 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Laptops">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#1b3a8a"/><stop offset="1" stop-color="#3b82f6"/>
-  </linearGradient></defs>
-  <rect width="400" height="300" fill="#f1f5fb"/>
-  <circle cx="200" cy="135" r="78" fill="url(#g)" opacity="0.15"/>
-  <text x="200" y="160" font-size="84" text-anchor="middle">💻</text>
-  <text x="200" y="245" font-size="20" font-family="Segoe UI,Arial,sans-serif" font-weight="600" fill="#1b3a8a" text-anchor="middle">Laptops</text>
+  <rect width="400" height="300" fill="#F0F9FF"/>
+  <!-- glow -->
+  <circle cx="200" cy="140" r="90" fill="#E0F2FE"/>
+  <!-- screen lid -->
+  <rect x="110" y="75" width="180" height="122" rx="10" fill="#0F2744"/>
+  <!-- screen bezel inner -->
+  <rect x="120" y="83" width="160" height="106" rx="6" fill="#0A1628"/>
+  <!-- screen display -->
+  <rect x="126" y="89" width="148" height="94" rx="4" fill="#1E3A5F"/>
+  <!-- screen content: browser bar -->
+  <rect x="132" y="95" width="136" height="10" rx="3" fill="#132035"/>
+  <rect x="134" y="97" width="40" height="6" rx="2" fill="#06B6D4"/>
+  <!-- screen content: code/content lines -->
+  <rect x="132" y="112" width="90" height="5" rx="2" fill="#2563EB" opacity=".8"/>
+  <rect x="132" y="121" width="120" height="5" rx="2" fill="#3B82F6" opacity=".6"/>
+  <rect x="132" y="130" width="70" height="5" rx="2" fill="#2563EB" opacity=".5"/>
+  <rect x="132" y="139" width="110" height="5" rx="2" fill="#3B82F6" opacity=".5"/>
+  <rect x="132" y="148" width="80" height="5" rx="2" fill="#06B6D4" opacity=".6"/>
+  <rect x="132" y="157" width="100" height="5" rx="2" fill="#2563EB" opacity=".4"/>
+  <!-- webcam dot -->
+  <circle cx="200" cy="87" r="3" fill="#06B6D4"/>
+  <!-- base / keyboard -->
+  <rect x="100" y="197" width="200" height="14" rx="4" fill="#1D4ED8"/>
+  <!-- keyboard keys suggestion -->
+  <rect x="114" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="126" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="138" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="150" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="162" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="174" y="201" width="36" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="214" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="226" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <rect x="238" y="201" width="8" height="5" rx="1" fill="#3B82F6"/>
+  <!-- base bottom -->
+  <rect x="94" y="211" width="212" height="10" rx="6" fill="#2563EB"/>
+  <!-- trackpad -->
+  <rect x="176" y="202" width="48" height="5" rx="2" fill="#60A5FA"/>
 </svg>
