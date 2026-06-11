@@ -19,12 +19,7 @@ $current = basename($_SERVER['SCRIPT_NAME'] ?? '');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="TechNest - your one-stop online store for consumer electronics.">
     <title><?= e($page_title) ?></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= e(url('assets/css/main.css')) ?>">
-    <link rel="stylesheet" href="<?= e(url('assets/css/components.css')) ?>">
-    <link rel="stylesheet" href="<?= e(url('assets/css/responsive.css')) ?>">
+    <link rel="stylesheet" href="<?= e(url('assets/css/style.css')) ?>">
 </head>
 <body>
 <header class="site-header">
