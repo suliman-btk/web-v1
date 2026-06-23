@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!in_array($p['status'], ['active','inactive'], true)) $p['status'] = 'active';
 
     // Image upload (takes priority over the typed path when a file is provided)
-    if (!empty($_FILES['image_file'])) {
+    if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] !== UPLOAD_ERR_NO_FILE) {
         $up = upload_product_image($_FILES['image_file']);
         if ($up['error']) {
             $errors['image_file'] = $up['error'];

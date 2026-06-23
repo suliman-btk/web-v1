@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $oid = (int) ($_POST['order_id'] ?? 0);
     if ($oid) {
         db_exec(
-            'UPDATE orders SET status = ? WHERE order_id = ? AND assigned_delivery_id = ? AND status NOT IN ("delivered","cancelled")',
-            ['delivered', $oid, $uid]
+            'UPDATE orders SET status = ? WHERE order_id = ? AND assigned_delivery_id = ? AND status = ?',
+            ['delivered', $oid, $uid, 'shipped']
         );
         set_flash('success', 'Order marked as delivered.');
     }
@@ -70,16 +70,18 @@ require __DIR__ . '/../includes/delivery_header.php';
                 <td><?= e(money($o['total'])) ?></td>
                 <td><span class="pill pill-<?= e($o['status']) ?>"><?= e(ucfirst($o['status'])) ?></span></td>
                 <td>
-                <?php if ($o['status'] === 'delivered'): ?>
-                    <span class="pill pill-delivered">Delivered</span>
-                <?php elseif ($o['status'] === 'cancelled'): ?>
-                    <span class="pill pill-cancelled">Cancelled</span>
-                <?php else: ?>
+                <?php if ($o['status'] === 'shipped'): ?>
                     <form method="post" onsubmit="return confirm('Mark order <?= e($o['order_number']) ?> as delivered?')">
                         <?= csrf_field() ?>
                         <input type="hidden" name="order_id" value="<?= (int)$o['order_id'] ?>">
                         <button name="mark_delivered" class="btn btn-sm btn-primary">✓ Mark Delivered</button>
                     </form>
+                <?php elseif ($o['status'] === 'delivered'): ?>
+                    <span class="pill pill-delivered">Delivered</span>
+                <?php elseif ($o['status'] === 'cancelled'): ?>
+                    <span class="pill pill-cancelled">Cancelled</span>
+                <?php else: ?>
+                    <span class="muted" style="font-size:.8rem"><?= e(ucfirst($o['status'])) ?></span>
                 <?php endif; ?>
                 </td>
             </tr>

@@ -22,6 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'assign_delivery') {
         $did = $_POST['delivery_user_id'] === '' ? null : (int) $_POST['delivery_user_id'];
+        if ($did !== null && !db_one('SELECT user_id FROM users WHERE user_id = ? AND role = ?', [$did, 'delivery'])) {
+            set_flash('error', 'Invalid delivery user.');
+            redirect('admin/orders.php');
+        }
         db_exec('UPDATE orders SET assigned_delivery_id = ? WHERE order_id = ?', [$did, $oid]);
         set_flash('success', 'Delivery assignment updated.');
         redirect('admin/orders.php');
@@ -35,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($status === 'shipped') {
             $order = db_one('SELECT assigned_delivery_id FROM orders WHERE order_id = ?', [$oid]);
-            if (empty($order['assigned_delivery_id'])) {
+            if (!$order || empty($order['assigned_delivery_id'])) {
                 set_flash('error', 'Assign a delivery person before setting status to "Shipped".');
                 redirect('admin/orders.php');
             }

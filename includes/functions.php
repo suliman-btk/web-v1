@@ -141,8 +141,8 @@ function upload_product_image(array $file): array
     }
 
     $dir = __DIR__ . '/../assets/images/products/uploads';
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0775, true);
+    if (!is_dir($dir) && !mkdir($dir, 0775, true)) {
+        return ['path' => null, 'error' => 'Upload directory could not be created.'];
     }
     $name = 'prod_' . bin2hex(random_bytes(8)) . '.' . $allowed[$mime];
     $dest = $dir . '/' . $name;
