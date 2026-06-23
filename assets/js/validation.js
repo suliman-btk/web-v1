@@ -17,10 +17,33 @@
         phone:    'Please enter a valid phone number.',
         password: 'Use at least 8 characters with letters and numbers.',
         match:    'Values do not match.',
-        checked:  'Please tick this box to continue.'
+        checked:  'Please tick this box to continue.',
+        luhn:     'Invalid card number. Please check and try again.',
+        expiry:   'Invalid or expired expiry date (MM/YY).',
+        cvv:      'CVV must be 3 or 4 digits.'
     };
 
+    function luhnCheck(number) {
+        var s = number.replace(/\s/g, '');
+        if (!/^\d+$/.test(s)) return false;
+        var sum = 0, alt = false;
+        for (var i = s.length - 1; i >= 0; i--) {
+            var n = parseInt(s[i], 10);
+            if (alt) { n *= 2; if (n > 9) n -= 9; }
+            sum += n; alt = !alt;
+        }
+        return sum % 10 === 0;
+    }
+
+    function expiryValid(val) {
+        if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(val)) return false;
+        var parts = val.split('/');
+        var exp = new Date(2000 + parseInt(parts[1], 10), parseInt(parts[0], 10), 1);
+        return exp > new Date();
+    }
+
     function validateField(input) {
+        if (input.disabled) return true;
         var field = input.closest('.field');
         if (!field) return true;
         var rules = (input.getAttribute('data-validate') || '').split('|');
@@ -55,6 +78,15 @@
                 case 'match':
                     var other = document.getElementById(arg) || document.querySelector('[name="' + arg + '"]');
                     if (other && value !== other.value) error = MESSAGES.match;
+                    break;
+                case 'luhn':
+                    if (value !== '' && !luhnCheck(value)) error = MESSAGES.luhn;
+                    break;
+                case 'expiry':
+                    if (value !== '' && !expiryValid(value)) error = MESSAGES.expiry;
+                    break;
+                case 'cvv':
+                    if (value !== '' && !/^\d{3,4}$/.test(value)) error = MESSAGES.cvv;
                     break;
             }
         }
@@ -119,5 +151,28 @@
                 if (label) label.textContent = 'Password strength: ' + s.charAt(0).toUpperCase() + s.slice(1);
             });
         }
+
+        // Star picker hover + click interactivity
+        var pickers = document.querySelectorAll('.star-picker');
+        pickers.forEach(function (picker) {
+            var labels = picker.querySelectorAll('.star-label');
+            function highlight(upTo) {
+                labels.forEach(function (l, idx) {
+                    l.classList.toggle('active', idx < upTo);
+                });
+            }
+            labels.forEach(function (lbl, idx) {
+                var radio = lbl.querySelector('input[type="radio"]');
+                lbl.addEventListener('mouseenter', function () { highlight(idx + 1); });
+                picker.addEventListener('mouseleave', function () {
+                    var checked = picker.querySelector('input:checked');
+                    highlight(checked ? parseInt(checked.value, 10) : 0);
+                });
+                if (radio) {
+                    radio.addEventListener('change', function () { highlight(idx + 1); });
+                    if (radio.checked) highlight(idx + 1);
+                }
+            });
+        });
     });
 })();

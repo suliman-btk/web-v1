@@ -1,14 +1,17 @@
 <?php
 /**
  * Customer order history with line items and current status.
- * Module: Cart & Checkout (Moaz).
+ * Module: Checkout & Orders (Abdelaziz).
  */
 require_once __DIR__ . '/includes/auth.php';
 require_login();
 
 $user   = current_user();
 $orders = db_all(
-    'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
+    'SELECT o.*, p.txn_ref, p.method AS pay_method
+     FROM orders o
+     LEFT JOIN payments p ON p.order_id = o.order_id AND p.status = "paid"
+     WHERE o.user_id = ? ORDER BY o.created_at DESC',
     [$user['user_id']]
 );
 
@@ -45,6 +48,7 @@ require __DIR__ . '/includes/header.php';
                 </div>
                 <div>
                     <span class="pill pill-<?= e($o['status']) ?>"><?= e(ucfirst($o['status'])) ?></span>
+                    <span class="pill pill-payment-<?= e($o['payment_status']) ?>"><?= e(ucfirst($o['payment_status'])) ?></span>
                     <strong style="margin-left:10px"><?= e(money($o['total'])) ?></strong>
                 </div>
             </div>
@@ -63,7 +67,24 @@ require __DIR__ . '/includes/header.php';
                     </tbody>
                 </table>
             </div>
-            <p class="muted mt-2" style="font-size:.85rem">Deliver to: <?= e($o['full_name']) ?>, <?= e($o['address']) ?>, <?= e($o['city']) ?> <?= e($o['postcode']) ?></p>
+            <div class="summary-row mt-2"><span>Subtotal</span><span><?= e(money($o['subtotal'])) ?></span></div>
+            <div class="summary-row"><span>Shipping</span><span><?= $o['shipping_fee'] > 0 ? e(money($o['shipping_fee'])) : 'Free' ?></span></div>
+            <?php if ((float)$o['discount_amount'] > 0): ?>
+            <div class="summary-row coupon-discount">
+                <span>Discount <?= $o['coupon_code'] ? '(' . e($o['coupon_code']) . ')' : '' ?></span>
+                <span>− <?= e(money($o['discount_amount'])) ?></span>
+            </div>
+            <?php endif; ?>
+            <div class="summary-total" style="padding:6px 0"><span>Total</span><span><?= e(money($o['total'])) ?></span></div>
+            <p class="muted mt-2" style="font-size:.85rem">
+                Deliver to: <?= e($o['full_name']) ?>, <?= e($o['address']) ?>, <?= e($o['city']) ?> <?= e($o['postcode']) ?>
+                <?php if ($o['pay_method']): ?>
+                 &nbsp;|&nbsp; Paid via <strong><?= e(strtoupper($o['pay_method'])) ?></strong>
+                <?php endif; ?>
+                <?php if ($o['txn_ref']): ?>
+                 &nbsp;|&nbsp; Ref: <code><?= e($o['txn_ref']) ?></code>
+                <?php endif; ?>
+            </p>
         </div>
     <?php endforeach; ?>
 <?php endif; ?>

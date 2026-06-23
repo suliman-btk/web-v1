@@ -42,9 +42,11 @@
     </div>
 </footer>
 
-<script src="<?= e(url('assets/js/main.js')) ?>"></script>
+<?php $v = '?v=' . filemtime(__DIR__ . '/../assets/js/main.js'); ?>
+<script src="<?= e(url('assets/js/main.js')) . $v ?>"></script>
 <?php if (!empty($page_scripts)) foreach ($page_scripts as $script): ?>
-<script src="<?= e(url('assets/js/' . $script)) ?>"></script>
+<?php $sv = '?v=' . filemtime(__DIR__ . '/../assets/js/' . $script); ?>
+<script src="<?= e(url('assets/js/' . $script)) . $sv ?>"></script>
 <?php endforeach; ?>
 </body>
 </html>

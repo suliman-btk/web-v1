@@ -48,11 +48,19 @@ $orderBy = match ($sort) {
     'price_high' => 'COALESCE(p.discount_price, p.price) DESC',
     'name'       => 'p.name ASC',
     'discount'   => '(p.discount_price IS NOT NULL) DESC, p.created_at DESC',
+    'rating'     => 'avg_rating DESC, review_count DESC',
     default      => 'p.created_at DESC',
 };
 
-$sql = 'SELECT p.*, c.name AS category_name, c.slug AS category_slug
-        FROM products p JOIN categories c ON c.category_id = p.category_id
+$sql = 'SELECT p.*, c.name AS category_name, c.slug AS category_slug,
+               COALESCE(r.avg_rating, 0) AS avg_rating,
+               COALESCE(r.review_count, 0) AS review_count
+        FROM products p
+        JOIN categories c ON c.category_id = p.category_id
+        LEFT JOIN (
+            SELECT product_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
+            FROM reviews GROUP BY product_id
+        ) r ON r.product_id = p.product_id
         WHERE ' . implode(' AND ', $where) . ' ORDER BY ' . $orderBy;
 $products = db_all($sql, $params);
 
@@ -127,6 +135,7 @@ require __DIR__ . '/includes/header.php';
                         <option value="price_high" <?= $sort === 'price_high' ? 'selected' : '' ?>>Price: High to Low</option>
                         <option value="name"       <?= $sort === 'name' ? 'selected' : '' ?>>Name (A–Z)</option>
                         <option value="discount"   <?= $sort === 'discount' ? 'selected' : '' ?>>On Sale</option>
+                        <option value="rating"     <?= $sort === 'rating' ? 'selected' : '' ?>>Top Rated</option>
                     </select>
                 </label>
             </form>

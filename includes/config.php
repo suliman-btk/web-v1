@@ -8,8 +8,8 @@
  */
 
 // ---- Database connection settings ----
-define('DB_HOST', '127.0.0.1');
-define('DB_PORT', '3306');
+define('DB_HOST', 'localhost');
+define('DB_PORT', '3308');
 define('DB_NAME', 'technest');
 define('DB_USER', 'root');
 define('DB_PASS', '');          // XAMPP default root password is empty

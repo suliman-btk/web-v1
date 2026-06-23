@@ -14,39 +14,28 @@ $members = [
         'work' => [
             'Home page, product listing and product detail pages',
             'Hero section, category navigation and featured products',
-            'Product search, sorting and filtering',
+            'Product search, sorting, filtering and order history viewing',
         ],
     ],
     [
         'name' => 'Alkatheri, Sulaiman Ali Mahdi',
         'id'   => '1211305566',
-        'role' => 'Authentication & User Module',
+        'role' => 'Authentication, Cart & Checkout Module',
         'icon' => '🔐',
         'work' => [
             'Register, login and user profile pages',
-            'User registration with client- and server-side validation',
-            'Secure session-based login/logout and profile management',
+            'Shopping cart with AJAX quantity updates and session management',
+            'Checkout form with CSRF protection and order placement',
         ],
     ],
     [
-        'name' => 'Moaz Mohamed Salama',
-        'id'   => '—',
-        'role' => 'Cart & Checkout Module',
-        'icon' => '🛒',
-        'work' => [
-            'Shopping cart, checkout and order confirmation pages',
-            'Dynamic cart quantity and total updates using JavaScript',
-            'Checkout processing and order history management',
-        ],
-    ],
-    [
-        'name' => 'Abdelaziz Khalid Moussa',
-        'id'   => '—',
+        'name' => 'Abdelaziz, Khalid Moussa',
+        'id'   => '241UC24008',
         'role' => 'Admin & Database Module',
         'icon' => '⚙️',
         'work' => [
-            'Admin dashboard, product management and order management',
-            'Product CRUD and order status management',
+            'Admin dashboard, product CRUD and order management pages',
+            'User management and order status management system',
             'Database schema, ERD design and security implementation',
         ],
     ],
@@ -62,7 +51,7 @@ require __DIR__ . '/includes/header.php';
     <p class="muted">CIT6224 Web Application Development — TechNest Project Team</p>
 </section>
 
-<div class="product-grid mt-3" style="grid-template-columns:repeat(2,1fr)">
+<div class="product-grid mt-3" style="grid-template-columns:repeat(3,1fr)">
     <?php foreach ($members as $m): ?>
         <article class="card">
             <div style="font-size:2.4rem"><?= e($m['icon']) ?></div>

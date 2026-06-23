@@ -98,7 +98,6 @@ technest/
 |-------------|-------------------------------|------------------------------|
 | 1221301196  | Kashtu, Nasr Abraheem Barkah  | Frontend & Product           |
 | 1211305566  | Alkatheri, Sulaiman Ali Mahdi | Authentication & User        |
-| —           | Moaz Mohamed Salama           | Cart & Checkout              |
-| —           | Abdelaziz Khalid Moussa       | Admin & Database             |
+| 241UC24008  | Abdelaziz, Khalid Moussa      | Admin, Checkout & Database  |
 
 See the **Our Team** page in the app for full roles and contributions.

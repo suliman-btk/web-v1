@@ -150,7 +150,7 @@ function cart_items(): array
     return $items;
 }
 
-/** Compute subtotal / shipping / total for a set of cart items. */
+/** Compute subtotal / shipping / discount / total for cart items. */
 function cart_totals(array $items): array
 {
     $subtotal = 0.0;
@@ -158,9 +158,81 @@ function cart_totals(array $items): array
         $subtotal += (float) $it['line_total'];
     }
     $shipping = ($subtotal > 0 && $subtotal < SHIPPING_FREE_THRESHOLD) ? SHIPPING_FLAT_FEE : 0.0;
+
+    $discount = 0.0;
+    $couponCode = null;
+    $couponData = coupon_for_session($subtotal);
+    if ($couponData) {
+        $discount   = $couponData['discount'];
+        $couponCode = $couponData['code'];
+    }
+
+    $total = max(0.0, $subtotal - $discount) + $shipping;
     return [
-        'subtotal' => $subtotal,
-        'shipping' => $shipping,
-        'total'    => $subtotal + $shipping,
+        'subtotal'    => $subtotal,
+        'shipping'    => $shipping,
+        'discount'    => $discount,
+        'coupon_code' => $couponCode,
+        'total'       => $total,
     ];
+}
+
+/**
+ * Validate the session coupon against $subtotal and return discount info,
+ * or null if no valid coupon is applied.
+ */
+function coupon_for_session(float $subtotal): ?array
+{
+    $code = $_SESSION['coupon'] ?? null;
+    if (!$code) {
+        return null;
+    }
+    $coupon = db_one(
+        'SELECT * FROM coupons WHERE code = ? AND active = 1
+         AND (expires_at IS NULL OR expires_at >= CURDATE())',
+        [$code]
+    );
+    if (!$coupon) {
+        unset($_SESSION['coupon']);
+        return null;
+    }
+    if ($subtotal < (float) $coupon['min_subtotal']) {
+        return null;
+    }
+    $discount = $coupon['type'] === 'percent'
+        ? round($subtotal * (float) $coupon['value'] / 100, 2)
+        : (float) $coupon['value'];
+    $discount = min($discount, $subtotal);
+    return ['code' => $coupon['code'], 'discount' => $discount, 'coupon' => $coupon];
+}
+
+/** Return average rating (0.0-5.0) and review count for a product. */
+function product_rating(int $productId): array
+{
+    $row = db_one(
+        'SELECT AVG(rating) AS avg_rating, COUNT(*) AS review_count
+         FROM reviews WHERE product_id = ?',
+        [$productId]
+    );
+    return [
+        'avg'   => $row ? round((float) $row['avg_rating'], 1) : 0.0,
+        'count' => $row ? (int) $row['review_count'] : 0,
+    ];
+}
+
+/** Render N filled/half/empty stars as HTML spans. */
+function stars_html(float $avg, int $max = 5): string
+{
+    $out = '<span class="stars" aria-label="' . number_format($avg, 1) . ' out of ' . $max . '">';
+    for ($i = 1; $i <= $max; $i++) {
+        if ($avg >= $i) {
+            $out .= '<span class="star full">★</span>';
+        } elseif ($avg >= $i - 0.5) {
+            $out .= '<span class="star half">★</span>';
+        } else {
+            $out .= '<span class="star empty">☆</span>';
+        }
+    }
+    $out .= '</span>';
+    return $out;
 }

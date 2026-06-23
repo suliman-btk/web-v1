@@ -3,7 +3,7 @@
  * Checkout: collect delivery details, validate, then persist the order and
  * its line items in a single transaction (decrementing stock atomically).
  * Login is required before checkout.
- * Module: Cart & Checkout (Moaz).
+ * Module: Checkout & Orders (Abdelaziz).
  */
 require_once __DIR__ . '/includes/auth.php';
 require_login();
@@ -48,13 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $orderNumberPlaceholder = 'TMP-' . bin2hex(random_bytes(4));
             $stmt = $pdo->prepare(
                 'INSERT INTO orders
-                 (user_id, order_number, full_name, phone, address, city, postcode, subtotal, shipping_fee, total, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending")'
+                 (user_id, order_number, full_name, phone, address, city, postcode,
+                  subtotal, shipping_fee, discount_amount, coupon_code, total, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending")'
             );
             $stmt->execute([
                 $user['user_id'], $orderNumberPlaceholder, $old['full_name'], $old['phone'],
                 $old['address'], $old['city'], $old['postcode'],
-                $totals['subtotal'], $totals['shipping'], $totals['total'],
+                $totals['subtotal'], $totals['shipping'],
+                $totals['discount'], $totals['coupon_code'],
+                $totals['total'],
             ]);
             $orderId = (int) $pdo->lastInsertId();
             $orderNumber = 'TN-' . (1000 + $orderId);
@@ -83,8 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
             $_SESSION['cart'] = [];
-            set_flash('success', 'Your order has been placed successfully!');
-            redirect('order_confirm.php?order=' . urlencode($orderNumber));
+            unset($_SESSION['coupon']);
+            // Redirect to payment page — order stays 'unpaid' until payment confirmed
+            redirect('payment.php?order=' . urlencode($orderNumber));
 
         } catch (Throwable $ex) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -137,8 +141,8 @@ require __DIR__ . '/includes/header.php';
                     <span class="error-msg"><?= e($errors['postcode'] ?? '') ?></span>
                 </div>
             </div>
-            <p class="muted" style="font-size:.85rem">💳 This is a demo store — no real payment is taken. Your order is recorded as "Pending".</p>
-            <button type="submit" class="btn btn-primary btn-block mt-2">Place Order</button>
+            <p class="muted" style="font-size:.85rem">🔒 Your order will be reviewed on the next step before payment is taken.</p>
+            <button type="submit" class="btn btn-primary btn-block mt-2">Continue to Payment →</button>
         </form>
     </div>
 
@@ -153,6 +157,9 @@ require __DIR__ . '/includes/header.php';
         <hr style="border:none;border-top:1px solid var(--line);margin:10px 0">
         <div class="summary-row"><span>Subtotal</span><span><?= e(money($totals['subtotal'])) ?></span></div>
         <div class="summary-row"><span>Shipping</span><span><?= $totals['shipping'] > 0 ? e(money($totals['shipping'])) : 'Free' ?></span></div>
+        <?php if ($totals['discount'] > 0): ?>
+        <div class="summary-row coupon-discount"><span>Discount (<?= e($totals['coupon_code']) ?>)</span><span>− <?= e(money($totals['discount'])) ?></span></div>
+        <?php endif; ?>
         <div class="summary-total"><span>Total</span><span><?= e(money($totals['total'])) ?></span></div>
     </aside>
 </div>

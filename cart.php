@@ -3,7 +3,7 @@
  * Shopping cart: add / update / remove / clear items (session-based) and
  * display the cart with a live order summary.
  * Supports an AJAX (?ajax=1) JSON response for dynamic updates from cart.js.
- * Module: Cart & Checkout (Moaz).
+ * Module: Cart & Checkout (Alkatheri).
  */
 require_once __DIR__ . '/includes/auth.php';
 
@@ -21,6 +21,7 @@ function cart_json(array $extra = []): void
         'cart_count' => cart_count(),
         'subtotal'   => $totals['subtotal'],
         'shipping'   => $totals['shipping'],
+        'discount'   => $totals['discount'],
         'total'      => $totals['total'],
     ], $extra));
     exit;
@@ -39,6 +40,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $qty    = (int) ($_POST['quantity'] ?? 1);
 
     switch ($action) {
+        case 'apply_coupon':
+            $code = strtoupper(trim($_POST['coupon_code'] ?? ''));
+            if ($code === '') {
+                unset($_SESSION['coupon']);
+                set_flash('info', 'Coupon removed.');
+            } else {
+                $coupon = db_one(
+                    'SELECT * FROM coupons WHERE code = ? AND active = 1
+                     AND (expires_at IS NULL OR expires_at >= CURDATE())',
+                    [$code]
+                );
+                if (!$coupon) {
+                    set_flash('error', 'Invalid or expired coupon code.');
+                } else {
+                    $tmpItems = cart_items();
+                    $tmpSub   = array_sum(array_column($tmpItems, 'line_total'));
+                    if ($tmpSub < (float) $coupon['min_subtotal']) {
+                        set_flash('error', 'Minimum order of ' . money($coupon['min_subtotal']) . ' required for this coupon.');
+                    } else {
+                        $_SESSION['coupon'] = $coupon['code'];
+                        set_flash('success', 'Coupon "' . $coupon['code'] . '" applied!');
+                    }
+                }
+            }
+            redirect('cart.php');
+            break;
+
         case 'add':
             $product = db_one('SELECT * FROM products WHERE product_id = ? AND status = "active"', [$pid]);
             if ($product && (int) $product['stock_quantity'] > 0) {
@@ -151,8 +179,29 @@ require __DIR__ . '/includes/header.php';
         <h2>Order Summary</h2>
         <div class="summary-row"><span>Subtotal</span><span id="sum-subtotal"><?= e(money($totals['subtotal'])) ?></span></div>
         <div class="summary-row"><span>Shipping</span><span id="sum-shipping"><?= $totals['shipping'] > 0 ? e(money($totals['shipping'])) : 'Free' ?></span></div>
+        <?php if ($totals['discount'] > 0): ?>
+        <div class="summary-row coupon-discount"><span>Discount (<?= e($totals['coupon_code']) ?>)</span><span>− <?= e(money($totals['discount'])) ?></span></div>
+        <?php endif; ?>
         <div class="summary-total"><span>Total</span><span id="sum-total"><?= e(money($totals['total'])) ?></span></div>
         <p class="muted mt-2" style="font-size:.8rem">Free shipping on orders over <?= e(money(SHIPPING_FREE_THRESHOLD)) ?>.</p>
+
+        <!-- Coupon form -->
+        <form method="post" action="<?= e(url('cart.php')) ?>" class="coupon-form mt-2">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="apply_coupon">
+            <div class="coupon-input-row">
+                <input type="text" name="coupon_code" placeholder="Coupon code"
+                       value="<?= e($_SESSION['coupon'] ?? '') ?>"
+                       style="flex:1;padding:9px 12px;border:1px solid var(--line);border-radius:var(--radius-sm) 0 0 var(--radius-sm);font-size:.9rem">
+                <button type="submit" class="btn btn-outline btn-sm"
+                        style="border-radius:0 var(--radius-sm) var(--radius-sm) 0;border-left:0">Apply</button>
+            </div>
+            <?php if (!empty($_SESSION['coupon'])): ?>
+                <button type="submit" name="coupon_code" value=""
+                        class="btn btn-ghost btn-sm btn-block mt-1" style="font-size:.8rem">✕ Remove coupon</button>
+            <?php endif; ?>
+        </form>
+
         <a href="<?= e(url('checkout.php')) ?>" class="btn btn-primary btn-block mt-2">Proceed to Checkout →</a>
         <p class="text-center muted mt-2" style="font-size:.78rem">🔒 Secure checkout guaranteed</p>
     </aside>

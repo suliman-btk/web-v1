@@ -329,3 +329,108 @@ table.data tr:last-child td { border-bottom: 0; }
     .product-grid { grid-template-columns: 1fr 1fr; }
     .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   Star Ratings
+   ===================================================================== */
+.stars { display: inline-flex; gap: 1px; line-height: 1; }
+.star  { font-size: 1rem; }
+.star.full  { color: #f59e0b; }
+.star.half  { color: #f59e0b; opacity: .65; }
+.star.empty { color: #d1d5db; }
+.card-rating { display: flex; align-items: center; gap: 4px; margin: 4px 0; }
+.rating-summary { display: flex; align-items: center; gap: 8px; }
+
+/* =====================================================================
+   Star Picker (review form)
+   ===================================================================== */
+.star-picker { display: inline-flex; gap: 4px; direction: ltr; }
+.star-label input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.star-label .star-pick { font-size: 1.8rem; color: #d1d5db; cursor: pointer; transition: color .1s; }
+.star-label:hover .star-pick,
+.star-label:hover ~ .star-label .star-pick { color: #d1d5db; }
+.star-picker:hover .star-label .star-pick { color: #f59e0b; }
+.star-picker .star-label:hover ~ .star-label .star-pick { color: #d1d5db; }
+.star-label input:checked ~ .star-label .star-pick { color: #d1d5db; }
+.star-picker:not(:hover) .star-label input:checked .star-pick { color: #f59e0b; }
+/* Simpler approach using JS-enhanced state */
+.star-label.active .star-pick { color: #f59e0b; }
+
+/* =====================================================================
+   Reviews Section
+   ===================================================================== */
+.reviews-section { border-top: 2px solid var(--line); padding-top: 32px; }
+.review-form-wrap { max-width: 680px; }
+.reviews-list { display: flex; flex-direction: column; gap: 16px; }
+.review-card {
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 16px 20px;
+}
+.review-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.review-stars { display: flex; }
+.review-body { color: var(--ink); line-height: 1.6; white-space: pre-wrap; }
+
+/* =====================================================================
+   Wishlist
+   ===================================================================== */
+.wishlist-btn { transition: color .15s; }
+.wishlist-btn.wishlisted { color: var(--red) !important; border-color: var(--red) !important; }
+.wishlist-icon {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(255,255,255,.9); border: none; border-radius: 50%;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; cursor: pointer; color: var(--muted); transition: .15s;
+    box-shadow: var(--shadow);
+}
+.wishlist-icon:hover,
+.wishlist-icon.wishlisted { color: var(--red); background: #fff4f4; }
+.product-thumb { position: relative; }
+.wishlist-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+.wishlist-card { display: flex; gap: 16px; align-items: flex-start; padding: 16px; }
+.wishlist-thumb { width: 90px; flex-shrink: 0; }
+.wishlist-thumb img { width: 90px; height: 90px; object-fit: contain; border-radius: var(--radius-sm); }
+.wishlist-info { flex: 1; min-width: 0; }
+.wishlist-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+/* =====================================================================
+   Payment page
+   ===================================================================== */
+.payment-methods { display: flex; flex-direction: column; gap: 10px; margin: 12px 0 20px; }
+.method-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 2px solid var(--line);
+    border-radius: var(--radius-sm); cursor: pointer; transition: .15s; font-weight: 500;
+}
+.method-card input[type="radio"] { accent-color: var(--blue-600); }
+.method-card:hover, .method-card.selected { border-color: var(--blue-600); background: var(--blue-100); }
+.cod-note {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm);
+    padding: 14px 16px; color: #92400e;
+}
+#card-fields, #ewallet-fields, #cod-fields { animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+
+/* Payment status pills */
+.pill-payment-paid     { background: #d1fae5; color: #065f46; }
+.pill-payment-unpaid   { background: #fef3c7; color: #92400e; }
+.pill-payment-refunded { background: #ede9fe; color: #5b21b6; }
+
+/* =====================================================================
+   Coupon / discount
+   ===================================================================== */
+.coupon-form { border-top: 1px solid var(--line); padding-top: 14px; }
+.coupon-input-row { display: flex; }
+.coupon-discount { color: var(--green); font-weight: 600; }
+
+/* =====================================================================
+   Responsive additions
+   ===================================================================== */
+@media (max-width: 768px) {
+    .wishlist-grid { grid-template-columns: 1fr; }
+    .wishlist-card { flex-direction: column; }
+    .wishlist-actions { flex-direction: row; align-items: center; }
+    .payment-methods { gap: 8px; }
+}

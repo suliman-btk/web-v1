@@ -6,7 +6,7 @@
 .admin-shell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
 
 /* Sidebar */
-.admin-sidebar { background: var(--blue-900); color: #c7d2fe; display: flex; flex-direction: column; }
+.admin-sidebar { background: var(--blue-900); color: #c7d2fe; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .admin-brand { padding: 22px 22px 18px; font-size: 1.4rem; font-weight: 800; color: #fff; }
 .admin-brand span { color: var(--cyan-400); }
 .admin-brand small { display: block; font-size: .7rem; font-weight: 500; color: #8aa0d6; letter-spacing: .12em; text-transform: uppercase; margin-top: 2px; }
@@ -68,4 +68,46 @@
 }
 @media (max-width: 480px) {
     .stat-grid { grid-template-columns: 1fr; }
+}
+
+/* =====================================================================
+   Reports page
+   ===================================================================== */
+.reports-filter {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 14px 18px; margin-bottom: 24px;
+}
+.reports-filter label { display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 500; }
+.reports-filter input[type="date"] {
+    padding: 7px 10px; border: 1px solid var(--line);
+    border-radius: var(--radius-sm); font-size: .88rem;
+}
+.report-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 22px; }
+.chart-panel canvas { max-height: 280px; }
+.stat-grid.fiveup { grid-template-columns: repeat(5, 1fr) !important; }
+
+/* Payment status pills (used in admin too) */
+.pill-payment-paid     { background: #d1fae5; color: #065f46; }
+.pill-payment-unpaid   { background: #fef3c7; color: #92400e; }
+.pill-payment-refunded { background: #ede9fe; color: #5b21b6; }
+.coupon-discount { color: var(--green); font-weight: 600; }
+
+/* Print styles */
+@media print {
+    .no-print, .admin-sidebar, .admin-topbar, .admin-burger { display: none !important; }
+    .admin-shell { grid-template-columns: 1fr; }
+    .admin-content { padding: 0; }
+    .print-only { display: block !important; }
+    .report-charts { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(3, 1fr); }
+    body { background: #fff; }
+    .panel { border: 1px solid #ccc; page-break-inside: avoid; }
+}
+
+.print-only { display: none; }
+
+@media (max-width: 992px) {
+    .report-charts { grid-template-columns: 1fr; }
+    .stat-grid.fiveup { grid-template-columns: repeat(3, 1fr); }
 }

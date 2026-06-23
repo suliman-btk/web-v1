@@ -15,6 +15,10 @@ CREATE DATABASE IF NOT EXISTS technest
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE technest;
 
+DROP TABLE IF EXISTS wishlists;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS coupons;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS products;
@@ -69,28 +73,64 @@ CREATE TABLE products (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
+-- coupons : discount codes applied at cart/checkout
+-- ---------------------------------------------------------------------
+CREATE TABLE coupons (
+  coupon_id    INT AUTO_INCREMENT PRIMARY KEY,
+  code         VARCHAR(30)   NOT NULL UNIQUE,
+  type         ENUM('percent','fixed') NOT NULL DEFAULT 'percent',
+  value        DECIMAL(10,2) NOT NULL,
+  min_subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  active       TINYINT(1)    NOT NULL DEFAULT 1,
+  expires_at   DATE          DEFAULT NULL,
+  created_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
 -- orders : one row per placed order
 -- ---------------------------------------------------------------------
 CREATE TABLE orders (
-  order_id     INT AUTO_INCREMENT PRIMARY KEY,
-  user_id      INT NOT NULL,
-  order_number VARCHAR(20) NOT NULL UNIQUE,
-  full_name    VARCHAR(100) NOT NULL,
-  phone        VARCHAR(30)  NOT NULL,
-  address      VARCHAR(255) NOT NULL,
-  city         VARCHAR(80)  NOT NULL,
-  postcode     VARCHAR(20)  NOT NULL,
-  subtotal     DECIMAL(10,2) NOT NULL,
-  shipping_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  total        DECIMAL(10,2) NOT NULL,
-  status       ENUM('pending','processing','shipped','delivered','cancelled')
-                 NOT NULL DEFAULT 'pending',
-  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  order_id        INT AUTO_INCREMENT PRIMARY KEY,
+  user_id         INT NOT NULL,
+  order_number    VARCHAR(20) NOT NULL UNIQUE,
+  full_name       VARCHAR(100) NOT NULL,
+  phone           VARCHAR(30)  NOT NULL,
+  address         VARCHAR(255) NOT NULL,
+  city            VARCHAR(80)  NOT NULL,
+  postcode        VARCHAR(20)  NOT NULL,
+  subtotal        DECIMAL(10,2) NOT NULL,
+  shipping_fee    DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  discount_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  coupon_code     VARCHAR(30)   DEFAULT NULL,
+  total           DECIMAL(10,2) NOT NULL,
+  payment_status  ENUM('unpaid','paid','refunded') NOT NULL DEFAULT 'unpaid',
+  payment_method  VARCHAR(20)  DEFAULT NULL,
+  status          ENUM('pending','processing','shipped','delivered','cancelled')
+                    NOT NULL DEFAULT 'pending',
+  created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_orders_user
     FOREIGN KEY (user_id) REFERENCES users(user_id)
     ON UPDATE CASCADE ON DELETE CASCADE,
   INDEX idx_orders_user (user_id),
-  INDEX idx_orders_status (status)
+  INDEX idx_orders_status (status),
+  INDEX idx_orders_payment_status (payment_status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- payments : transaction log (1-to-many, records refunds separately)
+-- ---------------------------------------------------------------------
+CREATE TABLE payments (
+  payment_id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id   INT NOT NULL,
+  method     ENUM('card','ewallet','cod') NOT NULL,
+  txn_ref    VARCHAR(40)   NOT NULL,
+  amount     DECIMAL(10,2) NOT NULL,
+  status     ENUM('paid','refunded','failed') NOT NULL DEFAULT 'paid',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_payments_order
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  INDEX idx_payments_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
@@ -113,6 +153,43 @@ CREATE TABLE order_items (
   INDEX idx_items_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ---------------------------------------------------------------------
+-- reviews : customer product ratings (one per customer per product)
+-- ---------------------------------------------------------------------
+CREATE TABLE reviews (
+  review_id  INT AUTO_INCREMENT PRIMARY KEY,
+  product_id INT NOT NULL,
+  user_id    INT NOT NULL,
+  rating     TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment    TEXT DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_review_product_user (product_id, user_id),
+  CONSTRAINT fk_reviews_product
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_reviews_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  INDEX idx_reviews_product (product_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- wishlists : saved products per customer
+-- ---------------------------------------------------------------------
+CREATE TABLE wishlists (
+  wishlist_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT NOT NULL,
+  product_id  INT NOT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_wishlist_user_product (user_id, product_id),
+  CONSTRAINT fk_wishlists_user
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT fk_wishlists_product
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+    ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- =====================================================================
 -- SEED DATA
 -- =====================================================================
@@ -120,7 +197,9 @@ CREATE TABLE order_items (
 -- password hashes below verified with PHP password_verify()
 INSERT INTO users (full_name, email, password_hash, phone, role) VALUES
 ('TechNest Admin',   'admin@technest.com',    '$2y$12$UwK8NCx1zJkWEC/kHWwJv.HS7Frl/ZZMg.bObsCySrCH0w4HKm1i2', '0123456789', 'admin'),
-('Demo Customer',    'customer@technest.com', '$2y$12$9RNnzA.Xm7HwiAZCLVIPI.Pi7p52Do3ysa9nlhC4w7tcCNikO.nHK',  '0198765432', 'customer');
+('Demo Customer',    'customer@technest.com', '$2y$12$9RNnzA.Xm7HwiAZCLVIPI.Pi7p52Do3ysa9nlhC4w7tcCNikO.nHK',  '0198765432', 'customer'),
+('Ahmad Razif',      'ahmad@example.com',     '$2y$12$9RNnzA.Xm7HwiAZCLVIPI.Pi7p52Do3ysa9nlhC4w7tcCNikO.nHK',  '0111234567', 'customer'),
+('Nurul Aina',       'nurul@example.com',     '$2y$12$9RNnzA.Xm7HwiAZCLVIPI.Pi7p52Do3ysa9nlhC4w7tcCNikO.nHK',  '0129876543', 'customer');
 
 INSERT INTO categories (name, slug, description, icon) VALUES
 ('Smartphones & Tablets', 'smartphones', 'Phones, tablets and e-readers',       '📱'),
@@ -154,11 +233,87 @@ INSERT INTO products
 (5,'Keychron K2 Keyboard','Keychron','Wireless hot-swappable mechanical keyboard, 75% layout, RGB.',459.00,419.00,18,'assets/images/products/accessories.svg',0,'active'),
 (5,'USB-C Charging Cable 2m','UGREEN','100W fast-charging braided USB-C to USB-C cable.',49.00,NULL,120,'assets/images/products/accessories.svg',0,'active');
 
+-- ---- Coupons ----
+INSERT INTO coupons (code, type, value, min_subtotal, active, expires_at) VALUES
+('TECH10',   'percent', 10.00,   0.00,   1, NULL),
+('SAVE50',   'fixed',   50.00,  500.00,  1, NULL),
+('STUDENT15','percent', 15.00,   0.00,   1, '2026-12-31'),
+('WELCOME20','percent', 20.00,   0.00,   1, '2026-08-01');
+
+-- ---- Orders (seed with realistic history for reports) ----
+-- user 2 = Demo Customer, user 3 = Ahmad Razif, user 4 = Nurul Aina
 INSERT INTO orders
-  (user_id, order_number, full_name, phone, address, city, postcode, subtotal, shipping_fee, total, status)
+  (user_id, order_number, full_name, phone, address, city, postcode,
+   subtotal, shipping_fee, discount_amount, coupon_code, total,
+   payment_status, payment_method, status, created_at)
 VALUES
-(2,'TN-1000','Demo Customer','0198765432','12 Jalan Teknologi','Cyberjaya','63000',3998.00,0.00,3998.00,'processing');
+-- order 1 – already processing, paid by card
+(2,'TN-1001','Demo Customer','0198765432','12 Jalan Teknologi','Cyberjaya','63000',
+ 3998.00,0.00,0.00,NULL,3998.00,'paid','card','delivered','2026-05-10 09:15:00'),
+-- order 2 – Ahmad, paid by e-wallet
+(3,'TN-1002','Ahmad Razif','0111234567','45 Jalan Imbi','Kuala Lumpur','50250',
+ 2599.00,0.00,0.00,NULL,2599.00,'paid','ewallet','delivered','2026-05-18 14:22:00'),
+-- order 3 – Nurul, COD pending
+(4,'TN-1003','Nurul Aina','0129876543','8 Persiaran Gurney','Georgetown','10250',
+ 1049.00,15.00,0.00,NULL,1064.00,'unpaid','cod','processing','2026-06-01 11:05:00'),
+-- order 4 – Demo Customer, coupon applied, paid by card
+(2,'TN-1004','Demo Customer','0198765432','12 Jalan Teknologi','Cyberjaya','63000',
+ 999.00,15.00,100.00,'TECH10',914.00,'paid','card','shipped','2026-06-05 16:40:00'),
+-- order 5 – Ahmad, ewallet, processing
+(3,'TN-1005','Ahmad Razif','0111234567','45 Jalan Imbi','Kuala Lumpur','50250',
+ 1299.00,15.00,0.00,NULL,1314.00,'paid','ewallet','processing','2026-06-10 10:30:00'),
+-- order 6 – Nurul, card, pending
+(4,'TN-1006','Nurul Aina','0129876543','8 Persiaran Gurney','Georgetown','10250',
+ 329.00,15.00,50.00,'SAVE50',294.00,'paid','card','pending','2026-06-15 08:55:00'),
+-- order 7 – Demo Customer, card, delivered
+(2,'TN-1007','Demo Customer','0198765432','12 Jalan Teknologi','Cyberjaya','63000',
+ 5999.00,0.00,0.00,NULL,5999.00,'paid','card','delivered','2026-06-18 13:20:00'),
+-- order 8 – Ahmad, cancelled, unpaid
+(3,'TN-1008','Ahmad Razif','0111234567','45 Jalan Imbi','Kuala Lumpur','50250',
+ 3999.00,0.00,0.00,NULL,3999.00,'unpaid',NULL,'cancelled','2026-06-20 09:00:00');
 
 INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity, line_total) VALUES
-(1, 1, 'Samsung Galaxy S24', 2999.00, 1, 2999.00),
-(1, 10,'Apple AirPods Pro 2', 999.00,  1, 999.00);
+-- order 1
+(1, 1,  'Samsung Galaxy S24',   2999.00, 1, 2999.00),
+(1, 10, 'Apple AirPods Pro 2',   999.00, 1,  999.00),
+-- order 2
+(2, 5,  'ASUS VivoBook 15',     2599.00, 1, 2599.00),
+-- order 3
+(3, 11, 'Apple Watch SE 2',     1049.00, 1, 1049.00),
+-- order 4
+(4, 10, 'Apple AirPods Pro 2',   999.00, 1,  999.00),
+-- order 5
+(5, 13, 'Samsung Galaxy Watch 6',1299.00,1, 1299.00),
+-- order 6
+(6, 18, 'Anker 737 Power Bank',   329.00, 1,  329.00),
+-- order 7
+(7, 7,  'Dell XPS 13',          5999.00, 1, 5999.00),
+-- order 8
+(8, 2,  'Apple iPhone 15',      3999.00, 1, 3999.00);
+
+-- ---- Payments (one row per paid order) ----
+INSERT INTO payments (order_id, method, txn_ref, amount, status, created_at) VALUES
+(1, 'card',    'TXN-A1B2C3D4', 3998.00, 'paid', '2026-05-10 09:16:00'),
+(2, 'ewallet', 'TXN-E5F6G7H8', 2599.00, 'paid', '2026-05-18 14:23:00'),
+(4, 'card',    'TXN-I9J0K1L2',  914.00, 'paid', '2026-06-05 16:41:00'),
+(5, 'ewallet', 'TXN-M3N4O5P6', 1314.00, 'paid', '2026-06-10 10:31:00'),
+(6, 'card',    'TXN-Q7R8S9T0',  294.00, 'paid', '2026-06-15 08:56:00'),
+(7, 'card',    'TXN-U1V2W3X4', 5999.00, 'paid', '2026-06-18 13:21:00');
+
+-- ---- Reviews (demo customer reviewed items from delivered orders) ----
+INSERT INTO reviews (product_id, user_id, rating, comment, created_at) VALUES
+(1,  2, 5, 'Absolutely love this phone! The camera quality is stunning and battery life is impressive. Highly recommended.', '2026-05-20 10:00:00'),
+(10, 2, 4, 'Great noise cancellation, very comfortable to wear. Sound quality is top notch. Minor complaint: the case is a bit bulky.', '2026-05-21 11:30:00'),
+(5,  3, 5, 'Best laptop I have ever owned. Fast boot, great display and the build quality feels premium. Perfect for university.', '2026-05-28 15:45:00'),
+(11, 4, 4, 'Accurate fitness tracking and crash detection gives me peace of mind. Battery lasts about a day and a half.', '2026-06-08 09:20:00'),
+(7,  2, 5, 'Absolutely brilliant machine. The InfinityEdge display is gorgeous and performance is exceptional.', '2026-06-22 14:10:00'),
+(1,  3, 4, 'Very good phone for the price. Fast and reliable, though I wish the base storage was 512GB.', '2026-06-19 16:00:00'),
+(18, 4, 5, 'Charges my MacBook at full speed. Compact and the braided cable feels durable. Great value.', '2026-06-20 08:30:00');
+
+-- ---- Wishlists (sample saved products) ----
+INSERT INTO wishlists (user_id, product_id, created_at) VALUES
+(2, 6,  '2026-06-01 10:00:00'),
+(2, 9,  '2026-06-02 11:00:00'),
+(3, 2,  '2026-06-03 12:00:00'),
+(3, 14, '2026-06-04 13:00:00'),
+(4, 5,  '2026-06-05 14:00:00');
