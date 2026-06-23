@@ -347,6 +347,23 @@ CREATE TABLE IF NOT EXISTS support_tickets (
   INDEX idx_ticket_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Return/refund requests submitted by customers for delivered orders
+CREATE TABLE IF NOT EXISTS return_requests (
+  request_id  INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  order_id    INT NOT NULL,
+  user_id     INT NOT NULL,
+  reason      TEXT NOT NULL,
+  status      ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  admin_note  TEXT DEFAULT NULL,
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  resolved_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (request_id),
+  UNIQUE KEY uq_return_order (order_id),
+  CONSTRAINT fk_return_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+  CONSTRAINT fk_return_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)   ON DELETE CASCADE,
+  INDEX idx_return_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Individual chat messages per ticket
 CREATE TABLE IF NOT EXISTS ticket_messages (
   message_id INT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -19,6 +19,7 @@ $nav = [
     'coupons.php'   => ['🏷', 'Coupons'],
     'reports.php'   => ['📈', 'Reports'],
     'tickets.php'   => ['💬', 'Support Tickets'],
+    'returns.php'   => ['↩', 'Return Requests'],
 ];
 ?>
 <!DOCTYPE html>
