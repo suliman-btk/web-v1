@@ -49,6 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if ($user['role'] === 'admin')    redirect('admin/dashboard.php');
             if ($user['role'] === 'delivery') redirect('delivery/dashboard.php');
+            if ($user['role'] === 'seller')   redirect('seller/dashboard.php');
             redirect('index.php');
         }
     }

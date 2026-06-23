@@ -325,8 +325,8 @@ INSERT INTO wishlists (user_id, product_id, created_at) VALUES
 -- They are also safe to include on fresh import (IF NOT EXISTS / MODIFY).
 -- =====================================================================
 
--- Extend role enum to include delivery staff
-ALTER TABLE users MODIFY role ENUM('customer','admin','delivery') NOT NULL DEFAULT 'customer';
+-- Extend role enum to include delivery staff and sellers
+ALTER TABLE users MODIFY role ENUM('customer','admin','delivery','seller') NOT NULL DEFAULT 'customer';
 
 -- Link orders to assigned delivery staff
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_delivery_id INT DEFAULT NULL AFTER status;

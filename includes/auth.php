@@ -68,6 +68,20 @@ function require_login(): void
     }
 }
 
+function is_seller(): bool
+{
+    return is_logged_in() && (($_SESSION['role'] ?? '') === 'seller');
+}
+
+/** Require a seller or admin (sellers can access seller pages, admins can too). */
+function require_seller(): void
+{
+    if (!is_seller() && !is_admin()) {
+        set_flash('error', 'Seller access only.');
+        redirect('login.php');
+    }
+}
+
 function is_delivery(): bool
 {
     return is_logged_in() && (($_SESSION['role'] ?? '') === 'delivery');
