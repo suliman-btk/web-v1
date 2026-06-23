@@ -68,6 +68,20 @@ function require_login(): void
     }
 }
 
+function is_delivery(): bool
+{
+    return is_logged_in() && (($_SESSION['role'] ?? '') === 'delivery');
+}
+
+/** Require a delivery user; others are redirected to login. */
+function require_delivery(): void
+{
+    if (!is_delivery()) {
+        set_flash('error', 'Delivery access only.');
+        redirect('login.php');
+    }
+}
+
 /** Require an admin; customers/guests are blocked. */
 function require_admin(): void
 {

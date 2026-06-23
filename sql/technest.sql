@@ -317,3 +317,45 @@ INSERT INTO wishlists (user_id, product_id, created_at) VALUES
 (3, 2,  '2026-06-03 12:00:00'),
 (3, 14, '2026-06-04 13:00:00'),
 (4, 5,  '2026-06-05 14:00:00');
+
+-- =====================================================================
+-- Phase 2: Support Tickets + Delivery Role
+-- Module: Admin & Database (Khalid)
+-- Run these statements once via phpMyAdmin SQL tab on an existing DB.
+-- They are also safe to include on fresh import (IF NOT EXISTS / MODIFY).
+-- =====================================================================
+
+-- Extend role enum to include delivery staff
+ALTER TABLE users MODIFY role ENUM('customer','admin','delivery') NOT NULL DEFAULT 'customer';
+
+-- Link orders to assigned delivery staff
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_delivery_id INT DEFAULT NULL AFTER status;
+
+-- Support ticket threads
+CREATE TABLE IF NOT EXISTS support_tickets (
+  ticket_id  INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id    INT UNSIGNED NOT NULL,
+  order_id   INT UNSIGNED DEFAULT NULL,
+  subject    VARCHAR(150) NOT NULL,
+  status     ENUM('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (ticket_id),
+  CONSTRAINT fk_ticket_user  FOREIGN KEY (user_id)  REFERENCES users(user_id)  ON DELETE CASCADE,
+  CONSTRAINT fk_ticket_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE SET NULL,
+  INDEX idx_ticket_user   (user_id),
+  INDEX idx_ticket_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Individual chat messages per ticket
+CREATE TABLE IF NOT EXISTS ticket_messages (
+  message_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  ticket_id  INT UNSIGNED NOT NULL,
+  sender_id  INT UNSIGNED NOT NULL,
+  message    TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id),
+  CONSTRAINT fk_msg_ticket FOREIGN KEY (ticket_id) REFERENCES support_tickets(ticket_id) ON DELETE CASCADE,
+  CONSTRAINT fk_msg_sender FOREIGN KEY (sender_id) REFERENCES users(user_id) ON DELETE CASCADE,
+  INDEX idx_msg_ticket (ticket_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -19,6 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $oid    = (int) ($_POST['order_id'] ?? 0);
 
+    if ($action === 'assign_delivery') {
+        $did = $_POST['delivery_user_id'] === '' ? null : (int) $_POST['delivery_user_id'];
+        db('UPDATE orders SET assigned_delivery_id = ? WHERE order_id = ?', [$did, $oid]);
+        set_flash('success', 'Delivery assignment updated.');
+        redirect('admin/orders.php');
+    }
+
     if ($action === 'update_status') {
         $status = $_POST['status'] ?? '';
         if (in_array($status, $statuses, true)) {
@@ -90,6 +97,9 @@ if ($orders) {
         $itemsByOrder[$row['order_id']][] = $row;
     }
 }
+
+// Delivery staff list for assignment dropdown
+$deliveryStaff = db_all("SELECT user_id, full_name FROM users WHERE role = 'delivery' ORDER BY full_name");
 
 $page_title = 'Manage Orders';
 $heading = 'Manage Orders';
@@ -172,6 +182,29 @@ require __DIR__ . '/../includes/admin_header.php';
             </table>
         </div>
         <p class="muted mt-2" style="font-size:.85rem">Deliver to: <?= e($o['full_name']) ?>, <?= e($o['address']) ?>, <?= e($o['city']) ?> <?= e($o['postcode']) ?> · <?= e($o['phone']) ?></p>
+
+        <?php /* Delivery assignment (Khalid — Admin & Database) */ ?>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:.85rem;color:var(--muted)">🚚 Assigned to:</span>
+            <?php if (!empty($deliveryStaff)): ?>
+            <form method="post" action="<?= e(url('admin/orders.php')) ?>" style="display:flex;gap:6px;align-items:center">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="assign_delivery">
+                <input type="hidden" name="order_id" value="<?= (int)$o['order_id'] ?>">
+                <select name="delivery_user_id" style="font-size:.85rem;padding:5px 8px">
+                    <option value="">— Unassigned —</option>
+                    <?php foreach ($deliveryStaff as $ds): ?>
+                        <option value="<?= (int)$ds['user_id'] ?>" <?= (int)($o['assigned_delivery_id'] ?? 0) === (int)$ds['user_id'] ? 'selected' : '' ?>>
+                            <?= e($ds['full_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="btn btn-sm btn-ghost" type="submit">Assign</button>
+            </form>
+            <?php else: ?>
+                <span class="muted" style="font-size:.82rem">(no delivery staff registered)</span>
+            <?php endif; ?>
+        </div>
     </div>
 <?php endforeach; endif; ?>
 

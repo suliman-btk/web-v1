@@ -43,6 +43,7 @@ $current = basename($_SERVER['SCRIPT_NAME'] ?? '');
                         <li><a href="<?= e(url('profile.php')) ?>">My Profile</a></li>
                         <li><a href="<?= e(url('order_history.php')) ?>">My Orders</a></li>
                         <li><a href="<?= e(url('wishlist.php')) ?>">♡ Wishlist</a></li>
+                        <li><a href="<?= e(url('support.php')) ?>">💬 Support</a></li>
                         <?php if (is_admin()): ?>
                             <li><a href="<?= e(url('admin/dashboard.php')) ?>">Admin Panel</a></li>
                         <?php endif; ?>

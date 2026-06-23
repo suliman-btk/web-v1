@@ -18,6 +18,7 @@ $nav = [
     'users.php'     => ['👥', 'Manage Users'],
     'coupons.php'   => ['🏷', 'Coupons'],
     'reports.php'   => ['📈', 'Reports'],
+    'tickets.php'   => ['💬', 'Support Tickets'],
 ];
 ?>
 <!DOCTYPE html>
