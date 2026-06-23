@@ -19,8 +19,8 @@ define('DB_CHARSET', 'utf8mb4');
 // BASE_URL is auto-detected from the folder the app runs in, so it works
 // whether the project sits at http://localhost/technest/ or http://localhost:8000/.
 $script_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
-// Strip a trailing "/admin" so admin pages still resolve assets at the app root.
-$script_dir = preg_replace('#/admin$#', '', $script_dir);
+// Strip trailing sub-panel dirs so all panels resolve assets at the app root.
+$script_dir = preg_replace('#/(admin|seller|delivery)$#', '', $script_dir);
 $base = rtrim($script_dir, '/');
 define('BASE_URL', $base === '' ? '/' : $base . '/');
 

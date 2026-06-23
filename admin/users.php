@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$createErrors) {
-            db(
+            db_exec(
                 'INSERT INTO users (full_name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, ?)',
                 [$createOld['full_name'], $createOld['email'], password_hash($pass, PASSWORD_DEFAULT), $createOld['phone'], $createOld['role']]
             );
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['delete_user'])) {
         $uid = (int) ($_POST['user_id'] ?? 0);
         if ($uid && $uid !== $me) {
-            db('DELETE FROM users WHERE user_id = ?', [$uid]);
+            db_exec('DELETE FROM users WHERE user_id = ?', [$uid]);
             set_flash('success', 'User deleted.');
         }
         header('Location: users.php'); exit;

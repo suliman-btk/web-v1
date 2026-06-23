@@ -46,6 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($p['stock_quantity'] < 0) $errors['stock_quantity'] = 'Stock cannot be negative.';
     if (!in_array($p['status'], ['active','inactive'], true)) $p['status'] = 'active';
 
+    // Image upload (takes priority over the typed path when a file is provided)
+    if (!empty($_FILES['image_file'])) {
+        $up = upload_product_image($_FILES['image_file']);
+        if ($up['error']) {
+            $errors['image_file'] = $up['error'];
+        } elseif ($up['path']) {
+            $p['image_path'] = $up['path'];
+        }
+    }
+
     if (!$errors) {
         $discount = $p['discount_price'] === '' ? null : (float) $p['discount_price'];
         $image = $p['image_path'] !== '' ? $p['image_path'] : null;
@@ -84,7 +94,7 @@ require __DIR__ . '/../includes/admin_header.php';
     <?php if (!empty($errors['general'])): ?>
         <div class="flash flash-error"><?= e($errors['general']) ?></div>
     <?php endif; ?>
-    <form method="post" action="<?= e(url('admin/product_form.php' . ($isEdit ? '?id=' . $id : ''))) ?>" novalidate>
+    <form method="post" action="<?= e(url('admin/product_form.php' . ($isEdit ? '?id=' . $id : ''))) ?>" enctype="multipart/form-data" novalidate>
         <?= csrf_field() ?>
         <div class="field <?= isset($errors['name']) ? 'has-error' : '' ?>">
             <label for="name">Product Name</label>
@@ -136,11 +146,20 @@ require __DIR__ . '/../includes/admin_header.php';
                 </select>
             </div>
         </div>
+        <div class="field <?= isset($errors['image_file']) ? 'has-error' : '' ?>">
+            <label for="image_file">Product Image</label>
+            <?php if (!empty($p['image_path'])): ?>
+                <div style="margin-bottom:8px"><img src="<?= e(url($p['image_path'])) ?>" alt="" style="max-height:80px;border:1px solid var(--line);border-radius:6px"></div>
+            <?php endif; ?>
+            <input type="file" id="image_file" name="image_file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <span class="error-msg"><?= e($errors['image_file'] ?? '') ?></span>
+            <div class="hint">Upload JPG, PNG, WEBP or GIF (max 3 MB).<?= $isEdit ? ' Leave empty to keep the current image.' : '' ?></div>
+        </div>
         <div class="field">
-            <label for="image_path">Image Path</label>
+            <label for="image_path">…or Image Path (optional)</label>
             <input type="text" id="image_path" name="image_path" value="<?= e($p['image_path']) ?>"
                    placeholder="assets/images/products/laptops.svg">
-            <div class="hint">Path relative to the project root. Leave blank to use a default placeholder.</div>
+            <div class="hint">Used only when no file is uploaded. Leave blank for a default placeholder.</div>
         </div>
         <div class="field">
             <label style="font-weight:400;display:flex;gap:8px;align-items:center">

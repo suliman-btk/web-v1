@@ -8,6 +8,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_admin();
 
 $statuses        = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+$adminStatuses   = ['pending', 'processing', 'shipped', 'cancelled']; // admin cannot set delivered
 $paymentStatuses = ['unpaid', 'paid', 'refunded'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,19 +22,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'assign_delivery') {
         $did = $_POST['delivery_user_id'] === '' ? null : (int) $_POST['delivery_user_id'];
-        db('UPDATE orders SET assigned_delivery_id = ? WHERE order_id = ?', [$did, $oid]);
+        db_exec('UPDATE orders SET assigned_delivery_id = ? WHERE order_id = ?', [$did, $oid]);
         set_flash('success', 'Delivery assignment updated.');
         redirect('admin/orders.php');
     }
 
     if ($action === 'update_status') {
         $status = $_POST['status'] ?? '';
-        if (in_array($status, $statuses, true)) {
-            db()->prepare('UPDATE orders SET status = ? WHERE order_id = ?')->execute([$status, $oid]);
-            set_flash('success', 'Order status updated.');
-        } else {
-            set_flash('error', 'Invalid status.');
+        if (!in_array($status, $adminStatuses, true)) {
+            set_flash('error', $status === 'delivered' ? 'Only delivery staff can mark orders as delivered.' : 'Invalid status.');
+            redirect('admin/orders.php');
         }
+        if ($status === 'shipped') {
+            $order = db_one('SELECT assigned_delivery_id FROM orders WHERE order_id = ?', [$oid]);
+            if (empty($order['assigned_delivery_id'])) {
+                set_flash('error', 'Assign a delivery person before setting status to "Shipped".');
+                redirect('admin/orders.php');
+            }
+        }
+        db()->prepare('UPDATE orders SET status = ? WHERE order_id = ?')->execute([$status, $oid]);
+        set_flash('success', 'Order status updated.');
 
     } elseif ($action === 'update_payment') {
         $payStatus = $_POST['payment_status'] ?? '';
@@ -147,9 +155,12 @@ require __DIR__ . '/../includes/admin_header.php';
                     <input type="hidden" name="action" value="update_status">
                     <input type="hidden" name="order_id" value="<?= (int) $o['order_id'] ?>">
                     <select name="status">
-                        <?php foreach ($statuses as $s): ?>
+                        <?php foreach ($adminStatuses as $s): ?>
                             <option value="<?= e($s) ?>" <?= $o['status'] === $s ? 'selected' : '' ?>><?= e(ucfirst($s)) ?></option>
                         <?php endforeach; ?>
+                        <?php if ($o['status'] === 'delivered'): ?>
+                            <option value="delivered" selected disabled>Delivered (by delivery staff)</option>
+                        <?php endif; ?>
                     </select>
                     <button class="btn btn-primary btn-sm" type="submit">Update</button>
                 </form>

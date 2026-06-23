@@ -102,6 +102,56 @@ function db_all(string $sql, array $params = []): array
     return $stmt->fetchAll();
 }
 
+/** Run a write query (INSERT/UPDATE/DELETE); returns affected row count. */
+function db_exec(string $sql, array $params = []): int
+{
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->rowCount();
+}
+
+/**
+ * Handle a product image upload from an $_FILES entry.
+ * Returns ['path' => relative-path|null, 'error' => message|null].
+ * 'path' is null when no file was uploaded (caller keeps its existing value).
+ */
+function upload_product_image(array $file): array
+{
+    // No file chosen — not an error, caller falls back to existing/typed path.
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return ['path' => null, 'error' => null];
+    }
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return ['path' => null, 'error' => 'Image upload failed (code ' . (int) $file['error'] . ').'];
+    }
+    if ($file['size'] > 3 * 1024 * 1024) {
+        return ['path' => null, 'error' => 'Image too large (max 3 MB).'];
+    }
+
+    $allowed = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+        'image/gif'  => 'gif',
+    ];
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime  = $finfo->file($file['tmp_name']);
+    if (!isset($allowed[$mime])) {
+        return ['path' => null, 'error' => 'Invalid image type. Use JPG, PNG, WEBP or GIF.'];
+    }
+
+    $dir = __DIR__ . '/../assets/images/products/uploads';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+    $name = 'prod_' . bin2hex(random_bytes(8)) . '.' . $allowed[$mime];
+    $dest = $dir . '/' . $name;
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        return ['path' => null, 'error' => 'Could not save the uploaded image.'];
+    }
+    return ['path' => 'assets/images/products/uploads/' . $name, 'error' => null];
+}
+
 /** Total quantity of items currently in the session cart (for the nav badge). */
 function cart_count(): int
 {
