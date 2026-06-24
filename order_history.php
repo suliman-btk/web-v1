@@ -87,7 +87,7 @@ require __DIR__ . '/includes/header.php';
                  &nbsp;|&nbsp; Ref: <code><?= e($o['txn_ref']) ?></code>
                 <?php endif; ?>
             </p>
-            <?php if ($o['status'] === 'delivered' && $o['payment_status'] === 'paid'): ?>
+            <?php if ($o['status'] === 'delivered'): ?>
                 <?php if ($o['return_status'] === null): ?>
                     <div class="mt-2">
                         <a href="<?= e(url('return_request.php?order_id=' . (int)$o['order_id'])) ?>"
@@ -96,6 +96,9 @@ require __DIR__ . '/includes/header.php';
                 <?php else: ?>
                     <div class="mt-2" style="font-size:.85rem">
                         Return request: <span class="pill pill-<?= e($o['return_status']) ?>"><?= e(ucfirst($o['return_status'])) ?></span>
+                        <?php if ($o['return_status'] === 'rejected'): ?>
+                            &nbsp;<a href="<?= e(url('return_request.php?order_id=' . (int)$o['order_id'])) ?>">Submit a new request</a>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>

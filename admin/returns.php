@@ -34,9 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo  = db();
         $pdo->beginTransaction();
         try {
-            $pdo->prepare(
-                'UPDATE return_requests SET status = ?, admin_note = ?, resolved_at = NOW() WHERE request_id = ?'
-            )->execute(['approved', $note, $rid]);
+            // Guard against double-submit: only the request that is still
+            // 'pending' wins the UPDATE. A concurrent approve sees 0 rows here.
+            $upd = $pdo->prepare(
+                'UPDATE return_requests SET status = ?, admin_note = ?, resolved_at = NOW()
+                 WHERE request_id = ? AND status = ?'
+            );
+            $upd->execute(['approved', $note, $rid, 'pending']);
+            if ($upd->rowCount() === 0) {
+                throw new RuntimeException('already_resolved');
+            }
 
             if ($req['payment_status'] === 'paid') {
                 $pdo->prepare('UPDATE orders SET payment_status = ? WHERE order_id = ?')
@@ -58,7 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash('success', 'Return approved and refund recorded.');
         } catch (Throwable $ex) {
             $pdo->rollBack();
-            set_flash('error', 'Transaction failed: ' . $ex->getMessage());
+            if ($ex->getMessage() === 'already_resolved') {
+                set_flash('error', 'Request already resolved.');
+            } else {
+                error_log('Return approve failed (request ' . $rid . '): ' . $ex->getMessage());
+                set_flash('error', 'Could not process the return. Please try again.');
+            }
         }
 
     } elseif ($action === 'reject') {

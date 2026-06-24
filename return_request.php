@@ -9,9 +9,12 @@ require_login();
 $uid = (int) $_SESSION['user_id'];
 $oid = (int) ($_GET['order_id'] ?? $_POST['order_id'] ?? 0);
 
+// Any delivered order may be returned. Refund (if any) is handled at approval
+// time and only applies to orders that were actually paid (card / e-wallet);
+// COD orders stay unpaid, so their return is logical-only with no refund.
 $order = $oid ? db_one(
-    'SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = ? AND payment_status = ?',
-    [$oid, $uid, 'delivered', 'paid']
+    'SELECT * FROM orders WHERE order_id = ? AND user_id = ? AND status = ?',
+    [$oid, $uid, 'delivered']
 ) : null;
 
 if (!$order) {
@@ -19,8 +22,10 @@ if (!$order) {
     redirect('order_history.php');
 }
 
+// A pending/approved request blocks a new one; a previously rejected request
+// may be resubmitted (we reuse the existing row to preserve UNIQUE(order_id)).
 $existing = db_one('SELECT request_id, status FROM return_requests WHERE order_id = ?', [$oid]);
-if ($existing) {
+if ($existing && $existing['status'] !== 'rejected') {
     set_flash('info', 'A return request for this order already exists (status: ' . $existing['status'] . ').');
     redirect('order_history.php');
 }
@@ -38,10 +43,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif (mb_strlen($reason) > 1000) $errors['reason'] = 'Reason too long (max 1000 characters).';
 
         if (!$errors) {
-            db_exec(
-                'INSERT INTO return_requests (order_id, user_id, reason) VALUES (?, ?, ?)',
-                [$oid, $uid, $reason]
-            );
+            if ($existing) {
+                // Resubmit a previously rejected request: reset it to pending.
+                db_exec(
+                    'UPDATE return_requests
+                        SET reason = ?, status = ?, admin_note = NULL,
+                            resolved_at = NULL, created_at = NOW()
+                      WHERE request_id = ? AND status = ?',
+                    [$reason, 'pending', $existing['request_id'], 'rejected']
+                );
+            } else {
+                db_exec(
+                    'INSERT INTO return_requests (order_id, user_id, reason) VALUES (?, ?, ?)',
+                    [$oid, $uid, $reason]
+                );
+            }
             set_flash('success', 'Return request submitted. We will review it within 2–3 business days.');
             redirect('order_history.php');
         }
