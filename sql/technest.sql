@@ -333,9 +333,9 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS assigned_delivery_id INT DEFAULT NUL
 
 -- Support ticket threads
 CREATE TABLE IF NOT EXISTS support_tickets (
-  ticket_id  INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id    INT UNSIGNED NOT NULL,
-  order_id   INT UNSIGNED DEFAULT NULL,
+  ticket_id  INT NOT NULL AUTO_INCREMENT,
+  user_id    INT NOT NULL,
+  order_id   INT DEFAULT NULL,
   subject    VARCHAR(150) NOT NULL,
   status     ENUM('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -349,7 +349,7 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 
 -- Return/refund requests submitted by customers for delivered orders
 CREATE TABLE IF NOT EXISTS return_requests (
-  request_id  INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  request_id  INT NOT NULL AUTO_INCREMENT,
   order_id    INT NOT NULL,
   user_id     INT NOT NULL,
   reason      TEXT NOT NULL,
@@ -366,9 +366,9 @@ CREATE TABLE IF NOT EXISTS return_requests (
 
 -- Individual chat messages per ticket
 CREATE TABLE IF NOT EXISTS ticket_messages (
-  message_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  ticket_id  INT UNSIGNED NOT NULL,
-  sender_id  INT UNSIGNED NOT NULL,
+  message_id INT NOT NULL AUTO_INCREMENT,
+  ticket_id  INT NOT NULL,
+  sender_id  INT NOT NULL,
   message    TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (message_id),
